@@ -46,6 +46,7 @@ const main = async () => {
 	const contractPeriod = await getPeriodOfContract(client)
 	console.log("Current contract period", contractPeriod)
 
+	await applyNewUpdate(myAddress, client, contractPeriod)
  	await applyNewUpdate(myAddress, client, contractPeriod + 1)
 }
 
