@@ -19,7 +19,7 @@
     "emitDecoratorMetadata": true,
     "typeRoots": ["node_modules/@types"]
   },
-  "include": ["src/**/*", "src/rpc-bundle/bootstrap-data/*.json"],
+  "include": ["src/**/*"],
   "ts-node": {
     "esm": true
   }
