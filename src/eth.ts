@@ -1,7 +1,9 @@
 import axios, { Axios } from 'axios'
 import { getEnv } from "./utils.js";
-import { ssz } from "@lodestar/types"
-import { LightClientUpdate } from '@lodestar/types/lib/altair/types.js';
+import { allForks, capella, ssz } from "@lodestar/types"
+import {Api, HttpStatusCode, getClient} from "@lodestar/api";
+import {config} from "@lodestar/config/default";
+import * as types from "@lodestar/types/capella";
 
 type BeaconBlock = typeof ssz.altair.BeaconBlock
 type BlockWithProof = [
@@ -10,39 +12,56 @@ type BlockWithProof = [
     chain?: typeof ssz.altair.LightClientHeader[]
 ]
 
-export class BeaconAPI {
-    api: Axios
-    constructor(baseURL = getEnv("BEACON_API")) {
-        this.api = axios.create({ baseURL }) 
+export class EthAPI {
+    private consensus: Api
+    private execution: Axios
+
+    constructor(beaconURL = getEnv("BEACON_API"), executionURL = getEnv("EXECUTION_RPC")) {
+        this.consensus = getClient({ baseUrl: beaconURL }, {config});
+        this.execution = axios.create({ baseURL: executionURL })
     }
 
     async getBootstrap(blockRoot: string) {
-        try {
-            const res = await this.api.get(`/eth/v1/beacon/light_client/bootstrap/${blockRoot}`);
-            return res.data.data;
-        } catch (error) {
-            throw new Error(`Error fetching or parsing bootstrap data: ${error}`);
+        const res = await this.consensus.lightclient.getBootstrap(blockRoot);
+        if (res.error) {
+            console.error(res.error);
+            throw new Error(`Error fetching or parsing bootstrap data`);
         }
+
+        return true
     }
 
-    async getUpdates(period: number, count = 1) {
-        try {
-            const res = await this.api.get(`/eth/v1/beacon/light_client/updates?start_period=${period}&count=${count}`);
-            return res.data.length ? res.data : null;
-        } catch (error) {
-            // If error response is available from server, use it, otherwise use the error message
-            throw new Error(`Error fetching or parsing update data: ${error}`);
+    async getUpdates(period: number, count = 1): Promise<capella.LightClientUpdate[]> {
+        const res = await this.consensus.lightclient.getUpdates(period, count)
+        if (res.error) {
+            console.error(res.error);
+            throw new Error(`Error fetching or parsing update data`);
         }
+
+        return res.response.map((r) => r.data as capella.LightClientUpdate);
     }
 
-    async getUpdate(period: number) {
-        try {
-            const res = await this.getUpdates(period); 
-            return res ? res[0].data : null;
+    async getUpdate(period: number): Promise<capella.LightClientUpdate> {
+        const res = await this.consensus.lightclient.getUpdates(period, 1)
+        if (res.error) {
+            console.error(res.error)
+            throw new Error(`Error fetching or parsing update data`)
         }
-        catch (error) {
-            throw new Error(`Error fetching or parsing update data: ${error}`);
+
+        return res.response[0].data as capella.LightClientUpdate;
+    }
+
+    async getBeaconBlock(slot: number) {
+        const res = await this.consensus.beacon.getBlock(slot)
+        if (res.error) {
+            console.error(res.error)
+            throw new Error(`Error fetching or parsing block data. ${res.error}`);
         }
+
+        return res.response.data;
+    }
+
+    async getBlockWithProof(period: number) {
     }
 }
 

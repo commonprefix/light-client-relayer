@@ -2,8 +2,7 @@ import { DirectSecp256k1HdWallet } from '@cosmjs/proto-signing'
 import { getEnv } from './utils.js'
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate"
 import { GasPrice } from '@cosmjs/stargate'
-import { AllForksSSZTypes } from '@lodestar/types/lib/allForks/types.js'
-import { LightClientUpdate } from '@lodestar/types/lib/altair/types.js'
+import * as capella from '@lodestar/types/capella'
 
 export class LightClientAPI {
 	private myAddress: string
@@ -24,15 +23,10 @@ export class LightClientAPI {
 		this.client = await SigningCosmWasmClient.connectWithSigner(this.rpcUrl, wallet, { gasPrice })
 	}
 
-	async applyNewUpdate(update: LightClientUpdate, period: number)  {
-		if (!update) {
-			console.log("No update found for period", period)
-			return false
-		}
-		console.log("Applying update for period", period)
-	
+	async applyNewUpdate(update: capella.LightClientUpdate, period: number)  {
 		try {
-			const res = await this.execute({ LightClientUpdate: { update, period }})
+			const updateSerialized = capella.ssz.LightClientUpdate.toJson(update);
+			const res = await this.execute({ LightClientUpdate: { update: updateSerialized, period }})
 			console.log(`Update applied for period ${period} with gas: ${res.gasUsed} uwasm`)
 		}
 		catch (e) {
@@ -46,16 +40,16 @@ export class LightClientAPI {
 		return true
 	}
 
-	async getPeriod() {
+	async getPeriod(): Promise<number> {
 		const res = await this.query({ light_client_state: {} })
 		return Math.floor(res.finalized_header.slot / 32 / 256)
 	}
 
-	private async query(msg: any) {
+	private async query(msg: any): Promise<any> {
 		return await this.client.queryContractSmart(this.address, msg)
 	}
 
-	private async execute(msg: any) {
+	private async execute(msg: any): Promise<any> {
 		return await this.client.execute(this.myAddress, this.address, msg, 'auto')
 	}
 }
