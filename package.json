@@ -18,7 +18,8 @@
     "@lodestar/config": "^1.11.3",
     "@lodestar/light-client": "^1.11.3",
     "@lodestar/types": "^1.11.3",
-    "axios": "^1.5.1"
+    "axios": "^1.5.1",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",
