@@ -16,6 +16,7 @@
     "@cosmjs/tendermint-rpc": "^0.31.1",
     "@lodestar/api": "^1.11.3",
     "@lodestar/config": "^1.11.3",
+    "@lodestar/light-client": "^1.11.3",
     "@lodestar/types": "^1.11.3",
     "axios": "^1.5.1"
   },

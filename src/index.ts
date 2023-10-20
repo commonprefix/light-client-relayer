@@ -1,6 +1,8 @@
 import { getEnv } from './utils.js'
 import { EthAPI } from './eth.js';
 import { LightClientAPI } from './lightclient.js';
+import { serializeBlockVerificationData } from './types.js';
+import { toHexString } from '@chainsafe/ssz';
 
 const CONTRACT_ADDRESS = getEnv("CONTRACT_ADDRESS") 
 
@@ -9,7 +11,11 @@ const main = async () => {
 	const lightClient = new LightClientAPI(CONTRACT_ADDRESS);
 	await lightClient.init()
 
-	// const t = await api.getBeaconBlock(7061552);
+	const verData = await api.getBlockVerificationData(7559175)
+	const serialized = serializeBlockVerificationData(verData)
+	const json = JSON.stringify(serialized)
+	console.log(json)
+
 	// const update = await api.getUpdate(864);
 	// await lightClient.applyNewUpdate(update, 864);
 
