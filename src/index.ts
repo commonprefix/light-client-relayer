@@ -3,6 +3,7 @@ import { EthAPI } from './eth.js';
 import { LightClientAPI } from './lightclient.js';
 import { serializeBlockVerificationData } from './types.js';
 import { toHexString } from '@chainsafe/ssz';
+import * as capella from '@lodestar/types/capella';
 
 const CONTRACT_ADDRESS = getEnv("CONTRACT_ADDRESS") 
 
@@ -11,9 +12,10 @@ const main = async () => {
 	const lightClient = new LightClientAPI(CONTRACT_ADDRESS);
 	await lightClient.init()
 
-	const verData = await api.getBlockVerificationData(7559175)
-	const serialized = serializeBlockVerificationData(verData)
-	const json = JSON.stringify(serialized)
+	const verData = await api.getBlockVerificationData(7061551)
+	const blocks = serializeBlockVerificationData(verData)
+	const json = JSON.stringify(blocks)
+
 	console.log(json)
 
 	// const update = await api.getUpdate(864);

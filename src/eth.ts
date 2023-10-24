@@ -5,10 +5,8 @@ import * as capella from "@lodestar/types/capella"
 import { Api, getClient } from "@lodestar/api";
 import { config } from "@lodestar/config/default";
 import { SyncAggregate } from '@lodestar/types/lib/altair/types.js';
-import { toBlockHeader } from '@lodestar/light-client/utils';
 import { BeaconBlockHeader } from '@lodestar/types/lib/phase0/types.js';
-import { BlockHeaders, LightClientBlockValidationRequest, serializeBlockVerificationData } from './types.js';
-import { toHexString } from '@chainsafe/ssz';
+import { LightClientBlockValidationRequest} from './types.js';
 
 const MIN_SYNC_COMMITTEE_PARTICIPATION = 450
 
@@ -63,14 +61,14 @@ export class EthAPI {
         return h
     }
 
-    async getBeaconBlock(slot: number): Promise<capella.SignedBeaconBlock> {
+    async getBeaconBlock(slot: number): Promise<capella.BeaconBlock> {
         const res = await this.consensus.beacon.getBlockV2(slot)
         if (res.error) {
             console.error(res.error)
             throw new Error(`Error fetching or parsing block data.`)
         }
 
-        return res.response.data 
+        return res.response.data.message as capella.BeaconBlock
     }
 
     async getBeaconBlockHeader(slot: number): Promise<phase0.BeaconBlockHeader> {
@@ -83,41 +81,50 @@ export class EthAPI {
         return res.response.data.header.message
     }
 
+    toBlockHeader(block: capella.BeaconBlock): BeaconBlockHeader {
+        return {
+            slot: block.slot,
+            proposerIndex: block.proposerIndex,
+            parentRoot: block.parentRoot,
+            stateRoot: block.stateRoot,
+            bodyRoot: capella.ssz.BeaconBlockBody.hashTreeRoot(block.body),
+          };
+    }
+
     async getBlockVerificationData(slot: number): Promise<LightClientBlockValidationRequest> {
-        let syncAggregateSig: SyncAggregate | null = null
+        let syncAggregate: SyncAggregate | null = null
         let intermediateChain: BeaconBlockHeader[] = []
+        let sigSlot: number
 
         const targetBlock = await this.getBeaconBlock(slot)
-        const executionBlockHash = toHexString(targetBlock.message.body.eth1Data.blockHash)
-        const targetBlockHeaders: BlockHeaders = {
-            beaconHeader: toBlockHeader(targetBlock.message),
-            executionHeader: await this.getExecutionBlockHeader(executionBlockHash)
-        } 
     
         while (true) {
-            const block = await this.getBeaconBlock(slot++)
-            const isValidSyncAggregate = await this.verifySyncAggregate(block, targetBlock.message.body.syncAggregate)
+            slot++
+            const block = await this.getBeaconBlock(slot)
+            const isValidSyncAggregate = await this.verifySyncAggregate(block, targetBlock.body.syncAggregate)
 
             if (isValidSyncAggregate) {
-                syncAggregateSig = block.message.body.syncAggregate
+                syncAggregate = block.body.syncAggregate
+                sigSlot = block.slot
                 break
             }
 
-            const header = toBlockHeader(block.message)
+            const header = this.toBlockHeader(block)
             intermediateChain.push(header)
         }
 
         return {
-            targetBlockHeaders,
-            syncAggregateSig,
+            targetBlock,
             intermediateChain,
+            syncAggregate,
+            sigSlot,
         };
     }
 
     /**
      * TODO: Verify that sync aggregate is actually valid and refers to the previous block
     */
-    public async verifySyncAggregate(attestedBlock: capella.SignedBeaconBlock, syncAggregate: SyncAggregate) {
+    public async verifySyncAggregate(attestedBlock: capella.BeaconBlock, syncAggregate: SyncAggregate) {
         const participation = syncAggregate.syncCommitteeBits.getTrueBitIndexes().length
         return participation >= MIN_SYNC_COMMITTEE_PARTICIPATION
     }

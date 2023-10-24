@@ -12,17 +12,18 @@ export type BlockHeaders = {
 }
 
 export type LightClientBlockValidationRequest = {
-    targetBlockHeaders: BlockHeaders //the block we want to verify,
-    syncAggregateSig: SyncAggregate, // the signature of the sync committee to the latest block of the intermediate chain or the target block if there is no intermediate chain
-    intermediateChain: BeaconBlockHeader[] // the chain of blocks from the target block to the block that has been signed with the latestCommitteeSignature
+    targetBlock: capella.BeaconBlock, //the block we want to verify,
+    intermediateChain: BeaconBlockHeader[], // the chain of blocks from the target block to the block that has been signed with the latestCommitteeSignature
+    syncAggregate: SyncAggregate // the chain of blocks from the target block to the block that has been signed with the latestCommitteeSignature
+    sigSlot: number
 }
-
 
 export function serializeBlockVerificationData(data: LightClientBlockValidationRequest) {
     return {
-        targetBLockHeaders: serializeBlockHeaders(data.targetBlockHeaders),
-        syncAggregateSig: altair.ssz.SyncAggregate.toJson(data.syncAggregateSig),
-        intermediateChain: data.intermediateChain.map(header => phase0.ssz.BeaconBlockHeader.toJson(header))
+        target_block: capella.ssz.BeaconBlock.toJson(data.targetBlock),
+        sync_aggregate: altair.ssz.SyncAggregate.toJson(data.syncAggregate),
+        sig_slot: data.sigSlot.toString(),
+        intermediate_chain: data.intermediateChain.map((header) => phase0.ssz.BeaconBlockHeader.toJson(header))
     }
 }
 
