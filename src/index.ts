@@ -1,38 +1,9 @@
-import { bytesToHex, formatReceipt, getEnv } from './utils.js';
+import { getEnv } from './utils.js';
 import { EthAPI } from './eth.js';
 import { LightClientAPI } from './lightclient.js';
-import { serializeBlockVerificationData } from './types.js';
-import { TrieWrapper} from './triewrapper.js';
-import { Receipt, UserInput } from './types.js';
-import assert from 'assert';
+import { UserInput, serializeBlockVerificationData } from './types.js';
 
-const CONTRACT_ADDRESS = getEnv("CONTRACT_ADDRESS") 
-
-async function isTopicInTransaction(api: EthAPI, lightClient: LightClientAPI, input: UserInput) {
-	const block = await api.getBlock(input.blockNumber);
-
-	const receipts: Receipt[] = (await api.getBlockTransactionReceipts(input.blockNumber)).map(formatReceipt);
-	const requestedTxReceipt = receipts.find((r) => r.transactionHash === input.transactionHash);
-	if (!requestedTxReceipt) throw new Error(`Could not find receipt for transaction ${input.transactionHash} in block ${input.blockNumber}`);
-
-	const transactionIndex = parseInt(requestedTxReceipt.transactionIndex, 16);
-	const receiptsTrie = await TrieWrapper.trieFromReceipts(receipts);
-	assert(
-		block.receiptsRoot.slice(2) === bytesToHex(receiptsTrie.root()),
-		`Expected receipts root (${block.receiptsRoot}) doesn't match the actual (${bytesToHex(receiptsTrie.root())})`);
-	const proof = await TrieWrapper.createProof(receiptsTrie, transactionIndex);
-
-	const isValidReceipt = true;
-	// const isValidReceipt = await lightClient.verify_receipt(
-	// 	block.receiptsRoot.slice(2),
-	// 	proof.map((p) => bytesToHex(p)),
-	// 	TrieWrapper.encodeKey(transactionIndex)
-	// );
-
-	if (isValidReceipt) {
-		return requestedTxReceipt.logs.find(log => log[1].includes(input.topic)) !== undefined;
-	}
-}
+const CONTRACT_ADDRESS = getEnv("CONTRACT_ADDRESS")
 
 const main = async () => {
 	const api = new EthAPI()
@@ -45,6 +16,15 @@ const main = async () => {
 
 	console.log(json)
 
+	const input: UserInput = {
+		blockNumber: 17875570,
+		transactionHash: '0x022edd6e5e56c918b0ec5177ec41569e606957af7d16d9e9e65174ed522830dc',
+		topic: '0xa945e51eec50ab98c161376f0db4cf2aeba3ec92755fe2fcd388bdbbb80ff196'
+	};
+
+	console.log(await lightClient.verifyTopicInTransaction(api, input));
+
+	// const t = await api.getBeaconBlock(7061552);
 	// const update = await api.getUpdate(864);
 	// await lightClient.applyNewUpdate(update, 864);
 
