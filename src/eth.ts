@@ -128,4 +128,41 @@ export class EthAPI {
         const participation = syncAggregate.syncCommitteeBits.getTrueBitIndexes().length
         return participation >= MIN_SYNC_COMMITTEE_PARTICIPATION
     }
+
+    async getBlock(number: number) {
+        try {
+            const res = await this.execution.post('/', {
+                jsonrpc: '2.0',
+                method: 'eth_getBlockByNumber',
+                params: [`0x${number.toString(16)}`, true],
+                id: 0
+            })
+            return res.data.result;
+        } catch (e) {
+            console.error(e);
+            throw new Error(`Error fetching block ${number}`);
+        }
+    }
+
+    // Requires an Alchemy RPC
+    async getBlockTransactionReceipts(number: number) {
+        try {
+            const res = await this.execution.post('/', {
+                jsonrpc: '2.0',
+                method: 'alchemy_getTransactionReceipts',
+                params: [{
+                    blockNumber: `0x${number.toString(16)}`
+                }],
+                id: 1
+            })
+            if (res.data.error) throw res.data.error;
+            return res.data.result.receipts;
+        } catch (e) {
+            console.error(e);
+            throw new Error(`Error fetching block receipts ${number}`);
+        }
+    }
+
+    async getBlockWithProof(period: number) {
+    }
 }

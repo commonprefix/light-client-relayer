@@ -14,11 +14,15 @@
     "@cosmjs/proto-signing": "^0.31.1",
     "@cosmjs/stargate": "^0.31.1",
     "@cosmjs/tendermint-rpc": "^0.31.1",
+    "@ethereumjs/rlp": "^5.0.0",
+    "@ethereumjs/trie": "^6.0.0",
+    "@ethereumjs/vm": "^7.0.0",
     "@lodestar/api": "^1.11.3",
     "@lodestar/config": "^1.11.3",
     "@lodestar/light-client": "^1.11.3",
     "@lodestar/types": "^1.11.3",
-    "axios": "^1.5.1"
+    "axios": "^1.5.1",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "ts-node": "^10.9.1",

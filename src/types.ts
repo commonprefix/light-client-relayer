@@ -33,3 +33,26 @@ export function serializeBlockHeaders(data: BlockHeaders) {
         executionHeader: data.executionHeader,
     }
 }
+
+export type UserInput = {
+	blockNumber: number;
+	transactionHash: string;
+	topic: string;
+};
+
+export type Receipt = {
+	transactionHash: string;
+	blockHash: string;
+	blockNumber: string;
+	logs: [string, string[], string];
+	contractAddress: null | string;
+	effectiveGasPrice: string;
+	cumulativeBlockGasUsed: number;
+	from: string;
+	gasUsed: string;
+	logsBloom: string;
+	status: 0 | 1;
+	to: string;
+	transactionIndex: string;
+	type: 0 | 1 | 2 | 3;
+}
