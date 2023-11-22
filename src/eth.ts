@@ -7,6 +7,7 @@ import { config } from "@lodestar/config/default";
 import { SyncAggregate } from '@lodestar/types/lib/altair/types.js';
 import { BeaconBlockHeader } from '@lodestar/types/lib/phase0/types.js';
 import { LightClientBlockValidationRequest} from './types.js';
+import { BeaconBlock, BeaconBlockBody } from '@lodestar/types/lib/phase0/sszTypes.js';
 
 const MIN_SYNC_COMMITTEE_PARTICIPATION = 450
 
@@ -47,6 +48,17 @@ export class EthAPI {
         }
 
         return res.response[0].data as capella.LightClientUpdate;
+    }
+
+    async getState(blockRoot: string): Promise<capella.BeaconState> {
+        const res = await this.consensus.debug.getStateV2(blockRoot)
+
+        if (res.error) {
+            console.error(res.error)
+            throw new Error(`Error fetching or parsing update data`)
+        }
+
+        return res.response.data as capella.BeaconState
     }
 
     async getExecutionBlockHeader(hash: string): Promise<any> { 
@@ -97,7 +109,6 @@ export class EthAPI {
         let sigSlot: number
 
         const targetBlock = await this.getBeaconBlock(slot)
-    
         while (true) {
             slot++
             const block = await this.getBeaconBlock(slot)

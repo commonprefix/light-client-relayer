@@ -1,22 +1,27 @@
 import { getEnv } from './utils.js'
 import { EthAPI } from './eth.js';
-import { LightClientAPI } from './lightclient.js';
-import { serializeBlockVerificationData } from './types.js';
-import { toHexString } from '@chainsafe/ssz';
 import * as capella from '@lodestar/types/capella';
 
-const CONTRACT_ADDRESS = getEnv("CONTRACT_ADDRESS") 
-
 const main = async () => {
+	let now = Date.now()
 	const api = new EthAPI()
-	const lightClient = new LightClientAPI(CONTRACT_ADDRESS);
-	await lightClient.init()
 
-	const verData = await api.getBlockVerificationData(7061551)
-	const blocks = serializeBlockVerificationData(verData)
-	const json = JSON.stringify(blocks)
+	console.log("Weve got an api")
 
-	console.log(json)
+	const state = await api.getState("head")
+	console.log("Weve got an state", Date.now() - now)
+	now = Date.now()
+	const lala = capella.ssz.BeaconState.hashTreeRoot(state);
+	console.log("parse", Date.now() - now)
+	console.log(lala)
+	// const lightClient = new LightClientAPI(CONTRACT_ADDRESS);
+	// await lightClient.init()
+
+	// const verData = await api.getBlockVerificationData(7061551)
+	// const blocks = serializeBlockVerificationData(verData)
+	// const json = JSON.stringify(blocks)
+
+	// console.log(json)
 
 	// const update = await api.getUpdate(864);
 	// await lightClient.applyNewUpdate(update, 864);
