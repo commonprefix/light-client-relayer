@@ -10,6 +10,7 @@ import { LightClientBlockValidationRequest} from './types.js';
 import { BeaconBlock, BeaconBlockBody } from '@lodestar/types/lib/phase0/sszTypes.js';
 import {Proof, computeDescriptor} from "@chainsafe/persistent-merkle-tree";
 import {verifyMerkleBranch} from '@lodestar/utils'
+import { toHexString } from '@chainsafe/ssz';
 
 const MIN_SYNC_COMMITTEE_PARTICIPATION = 450
 
@@ -30,6 +31,16 @@ export class EthAPI {
         }
 
         return true
+    }
+
+    async getBlockRoot(slot: number): Promise<string> {
+        const res = await this.consensus.beacon.getBlockRoot(slot)
+        if (res.error) {
+            console.error(res.error)
+            throw new Error(`Error fetching or parsing block root data`)
+        }
+
+        return toHexString(res.response.data.root)
     }
 
     async getUpdates(period: number, count = 1): Promise<capella.LightClientUpdate[]> {
@@ -63,15 +74,16 @@ export class EthAPI {
         return res.response.data as capella.BeaconState
     }
 
-    async getStateProof(blockRoot: string, g_index: any) {
+    async getStateProof(stateId: string, g_index: any) {
         const descriptor = computeDescriptor([g_index])
-        const res = await this.consensus.proof.getStateProof(blockRoot, descriptor)
+        const res = await this.consensus.proof.getStateProof(stateId, descriptor)
+        console.log(res)
 
         return res.response?.data as Proof
     }
 
-    async getBlockProof(blockRoot: string, g_index: any) {
-        const descriptor = computeDescriptor([g_index])
+    async getBlockProof(blockRoot: string, g_index: any[]) {
+        const descriptor = computeDescriptor(g_index)
         const res = await this.consensus.proof.getBlockProof(blockRoot, descriptor)
         console.log(res)
         return res.response?.data as Proof
